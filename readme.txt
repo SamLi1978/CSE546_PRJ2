@@ -22,7 +22,7 @@ ssh -i huizhili_key_pair.pem ec2-user@ec2-35-171-155-199.compute-1.amazonaws.com
 
 python3 workload_generator.py \
  --num_request 3 \
- --url 'http://your_host_ip:3000' \
+ --url 'http://localhost:8080' \
  --image_folder "your_local_image_folder"
 
 
