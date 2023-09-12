@@ -3,6 +3,8 @@ import boto3
 import os
 import time
 import binascii
+import configparser
+
 from multiprocessing import Process
 from multiprocessing import Manager
 
@@ -11,8 +13,11 @@ sqs_url_input = "https://sqs.us-east-1.amazonaws.com/307466288757/cse546-input-s
 sqs_url_output = "https://sqs.us-east-1.amazonaws.com/307466288757/cse546-output-sqs"
 s3_name_input = "cse546-input-bucket"
 s3_name_output = "cse546-output-bucket"
-ite = 0
 
+image_uploaded_dir = './images_uploaded'
+
+image_result_ini = 'image_result.ini'
+image_result_section = 'image_result'
 
 def sqs_send_message(sqs_url, message_body):
     sqs = boto3.client('sqs')
@@ -71,7 +76,7 @@ def s3_upload_image_result(s3_name, file_name, result):
 
 def read_file_blob(image_name):
 
-    with open(f'images/{image_name}', 'rb') as imagefile:
+    with open(f'{image_uploaded_dir}/{image_name}', 'rb') as imagefile:
         blob_data = binascii.hexlify(imagefile.read())
         imagefile.close()
         #print(blob_data)    
@@ -84,17 +89,39 @@ def write_file_blob(file_name, file_blob):
         imagefile.write(unhex_bytes)
         imagefile.close()
 
-def write_image_result(image_result):
+def image_result_set_data(key, value):
+
+    if not os.path.exists(image_result_ini):
+        with open(image_result_ini, 'w') as ini:
+            pass
+
+    config = configparser.ConfigParser()
+
+    '''
+    config.read('test.ini')
+    or 
+    with open(image_result_ini, 'r') as ini:
+        config.read_file(ini)
+
+    Both of them make the ini file appendable, or the ini file will be rewritten.
+    '''
+    with open(image_result_ini, 'r') as ini:
+        config.read_file(ini)
+ 
+    if config.has_section(image_result_section) == False:
+        config.add_section(image_result_section)    
     
-    with open(f'image_result.txt', 'a') as image_result_file:
-        image_result_file.write(f'{image_result}\n')
-        image_result_file.close()
+    config.set(image_result_section, key, value)
+
+    with open(image_result_ini, 'w') as ini:
+        config.write(ini)
+
 
 def handle_pipe(pipe, shared_list):
 
     while True:
 
-        time.sleep(0.01)
+        time.sleep(0.1)
         
         try:
             s = os.read(pipe,20)
@@ -106,11 +133,11 @@ def handle_pipe(pipe, shared_list):
         except BlockingIOError:
             pass
 
-def handle_request(ite, shared_list):
+def handle_request(shared_list):
 
     while True:
 
-        time.sleep(0.01)
+        time.sleep(1)
 
         if not shared_list:
             continue
@@ -124,44 +151,34 @@ def handle_request(ite, shared_list):
         response = sqs_send_message(sqs_url_input, image_name)
         #print(response)
 
-        response = sqs_receive_message(sqs_url_input)
-        if response == False:
-            print("No message")
-        else:
-            message = response[0]
-            receipt_handle = response[1]
-            print(f'message {message}')
-            
-            sqs_delete_message(sqs_url_input, receipt_handle)
-           
-            message_in_queue = sqs_query_message_count(sqs_url_input)
-            print(message_in_queue)   
-
-
         response = s3_upload_file(s3_name_input, image_name, image_blob)
         #print(response)
 
-        response = s3_upload_image_result(s3_name_output, image_name, f'result{ite}')
-        #print(response)
 
-        response = sqs_send_message(sqs_url_output, f'{image_name},result{ite}')
-        ite = ite + 1
-        #print(response)
+def handle_sqs_output_message():
+
+    while True:
+
+        time.sleep(1)
+
+        msg_count = sqs_query_message_count(sqs_url_output)
+        if msg_count==0:
+            print("no message")
+            continue
 
         response = sqs_receive_message(sqs_url_output)
         if response == False:
-            print("No message")
-        else:
-            message = response[0]
-            receipt_handle = response[1]
-            write_image_result(message)
-            print(f'message {message}')
-            
-            sqs_delete_message(sqs_url_output, receipt_handle)
-           
-            message_in_queue = sqs_query_message_count(sqs_url_output)
-            print(message_in_queue)   
+            print("msg is gone")
+            continue
 
+        message = response[0]
+        receipt_handle = response[1]
+        formatted = message.split(',')
+        image_result_set_data(formatted[0], formatted[1])
+        print(f'message {message}')
+                
+        sqs_delete_message(sqs_url_output, receipt_handle)
+           
 
 if __name__ == "__main__":
 
@@ -173,11 +190,14 @@ if __name__ == "__main__":
 
     with Manager() as manager:
         shared_list = manager.list()
-        process1 = Process(target=handle_pipe, args=(pipe, shared_list))
-        process2 = Process(target=handle_request, args=(ite, shared_list,))
-        process1.start()
-        process2.start()
-        process1.join()
-        process2.join()
+        process_pipe = Process(target=handle_pipe, args=(pipe, shared_list))
+        process_request = Process(target=handle_request, args=(shared_list,))
+        process_sqs = Process(target=handle_sqs_output_message, args=())
+        process_pipe.start()
+        process_request.start()
+        process_sqs.start()
+        process_pipe.join()
+        process_request.join()
+        process_sqs.join()
 
 

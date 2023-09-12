@@ -20,4 +20,9 @@ ssh -i huizhili_key_pair.pem ec2-user@ec2-35-171-155-199.compute-1.amazonaws.com
 注意，实际运行时请将ec2-35-171-155-199.compute-1.amazonaws.com替换成实际的实例地址
 
 
+python3 workload_generator.py \
+ --num_request 3 \
+ --url 'http://your_host_ip:3000' \
+ --image_folder "your_local_image_folder"
+
 

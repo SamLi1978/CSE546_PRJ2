@@ -3,7 +3,7 @@ from flask import *
 import os
 import time
 
-images = 'images'
+image_uploaded_dir = './images_uploaded'
 pipe_name = "my_pipe"
 
 app = Flask(__name__)
@@ -31,10 +31,10 @@ def upload_file():
 	if request.method == 'POST':
 		uploaded_file = request.files['myfile']
 		if uploaded_file.filename != '':
-			dir = os.path.isdir(images)
+			dir = os.path.isdir(image_uploaded_dir)
 			if dir == False:
-				os.mkdir(images)
-			uploaded_file.save("{}/{}".format(images,uploaded_file.filename))
+				os.mkdir(image_uploaded_dir)
+			uploaded_file.save("{}/{}".format(image_uploaded_dir,uploaded_file.filename))
 			output = "{} uploaded".format(uploaded_file.filename)
 			print(output)
 			notify_server(pipe_name, uploaded_file.filename)

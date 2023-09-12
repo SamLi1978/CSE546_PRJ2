@@ -17,6 +17,7 @@ sqs_url_output = "https://sqs.us-east-1.amazonaws.com/307466288757/cse546-output
 s3_name_input = "cse546-input-bucket"
 s3_name_output = "cse546-output-bucket"
 
+image_dir = './images_downloaded'
 image_label_json = 'imagenet-labels.json'
 
 
@@ -33,7 +34,7 @@ def sqs_receive_message(sqs_url):
             MessageAttributeNames=['All'],
             VisibilityTimeout=0)
             #WaitTimeSeconds=0)    
-    print(response)
+    #print(response)
     messages = response.get('Messages')
     if (messages == None):
         return False
@@ -54,15 +55,13 @@ def sqs_query_message_count(sqs_url):
     return int(count)
 
 def s3_download_file(s3_name, file_name):
+
     s3 = boto3.client('s3')
+    response = s3.get_object(Bucket=s3_name, Key=file_name)
+    #print(response)
+    hex_bytes = response.get('Body').read()
 
-    try:
-        response = s3.get_object(Bucket=s3_name, Key=file_name)
-        hex_bytes = response.get('Body')
-    finally:
-        return False
     return hex_bytes
-
 
 def s3_upload_image_result(s3_name, file_name, result):
     s3 = boto3.client('s3')
@@ -87,27 +86,45 @@ def image_classify(file_name):
     #print(f"{result}")
     return result
 
-        
+def write_file_blob(file_name, file_blob):
+
+    with open(f'{file_name}', 'wb') as imagefile:
+        unhex_bytes = binascii.unhexlify(file_blob)
+        imagefile.write(unhex_bytes)
+        imagefile.close()        
 
 if __name__ == "__main__":
     
     
     while True:
-        time.sleep(0.1)
+        time.sleep(1)
         
         msg_count = sqs_query_message_count(sqs_url_input)
         if msg_count==0:
+            print("no message")
             continue
 
-     
         response = sqs_receive_message(sqs_url_input)
         if response == False:
             print("msg is gone")
             continue
-        message = response[0]
+        
+        image_name = response[0]
         receipt_handle = response[1]
-        print(f'message {message}')
+        print(f'message {image_name}')
+        
+        if not os.path.exists(image_dir): 
+            os.makedirs(image_dir)
+        
+        file_blob = s3_download_file(s3_name_input, image_name)
+        write_file_blob(f'{image_dir}/{image_name}', file_blob)
+        
+        result = image_classify(f'{image_dir}/{image_name}')
+        print(result)
+        
+        s3_upload_image_result(s3_name_output, image_name, result)
+       
+        sqs_send_message(sqs_url_output, f'{image_name},{result}')
             
-        #sqs_delete_message(sqs_url_input, receipt_handle)
-
-    
+        sqs_delete_message(sqs_url_input, receipt_handle)
+            
