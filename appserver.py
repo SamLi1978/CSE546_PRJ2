@@ -56,10 +56,14 @@ def sqs_query_message_count(sqs_url):
 
 def s3_download_file(s3_name, file_name):
 
-    s3 = boto3.client('s3')
-    response = s3.get_object(Bucket=s3_name, Key=file_name)
-    #print(response)
-    hex_bytes = response.get('Body').read()
+    try:
+        s3 = boto3.client('s3')
+        print(f"key = {file_name}")
+        response = s3.get_object(Bucket=s3_name, Key=file_name)
+        #print(response)
+        hex_bytes = response.get('Body').read()
+    except Exception as e:
+        return False
 
     return hex_bytes
 
@@ -117,6 +121,10 @@ if __name__ == "__main__":
             os.makedirs(image_dir)
         
         file_blob = s3_download_file(s3_name_input, image_name)
+        if file_blob == False:
+            print("catch the exception")
+            continue
+            
         write_file_blob(f'{image_dir}/{image_name}', file_blob)
         
         result = image_classify(f'{image_dir}/{image_name}')
