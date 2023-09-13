@@ -9,10 +9,10 @@ from multiprocessing import Process
 from multiprocessing import Manager
 
 pipe_name = "my_pipe"
-sqs_url_input = "https://sqs.us-east-1.amazonaws.com/307466288757/cse546-input-sqs"
-sqs_url_output = "https://sqs.us-east-1.amazonaws.com/307466288757/cse546-output-sqs"
-s3_name_input = "cse546-input-bucket"
-s3_name_output = "cse546-output-bucket"
+sqs_url_input = "https://sqs.us-east-1.amazonaws.com/231128306811/cse546-input-sqs"
+sqs_url_output = "https://sqs.us-east-1.amazonaws.com/231128306811/cse546-output-sqs"
+s3_name_input = "cse546-input-s3"
+s3_name_output = "cse546-output-s3"
 
 image_uploaded_dir = './images_uploaded'
 
