@@ -47,8 +47,32 @@ def app_instance_scheduling():
     ec2_client.terminate_instances(InstanceIds=instance_list)
 
 
+def get_ec2_state(ec2_client, instance_id):
+
+    response = ec2_client.describe_instance_status(InstanceIds=[instance_id],)
+    #print(response)
+    ins_states = response['InstanceStatuses']
+    print(ins_states)
+    state_name = ''
+    for ins_state in ins_states:
+        state_name = ins_states['InstanceState']['Name']
+        state_code = ins_states['InstanceState']['Code']
+        print(state_code)
+    return state_name
+    
+def list_ec2_instances(ec2):
+    
+    instances = ec2.instances.all()
+    print(f"instance count : {len(list(instances))}")
+    for instance in instances:
+        #instance = ec2.Instance('i-009986e8937d17bd4')
+        print(instance.instance_id)
+        print(instance.image_id)
+        print(instance.tags)
+        print(instance.state)
 
 if __name__ == "__main__":
 
-
+    ec2 = boto3.resource('ec2')
+    list_ec2_instances(ec2)
 
