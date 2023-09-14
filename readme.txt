@@ -26,3 +26,25 @@ python3 workload_generator.py \
  --image_folder "your_local_image_folder"
 
 
+while true:
+
+	sleep(5)
+
+	check messages in sqs_input queue
+	check messages in sqs_output queue
+	check running instance count with tag
+
+	if (msg_count_in_sqs_input == 0 && msg_count_in_sqs_output == 0)
+	{
+		stop all the instances
+	}
+	
+	if (msg_count_in_sqs > 0)
+	{
+		if (running_count_instances + pending_count_instances == 0)	
+			start instances
+		if (running_count_instances + pending_count_instances > 10)	
+		
+			
+	}
+
