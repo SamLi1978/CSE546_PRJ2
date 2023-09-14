@@ -18,7 +18,7 @@ import boto3
 import time
 import sys
 
-ami = 'ami-045bfe57a27b5d826'
+ami = 'ami-0ce4e4a1afefc6fb7'
 name_tag = 'cse546-app-instance'
 
 def app_instance_scheduling():
@@ -26,7 +26,7 @@ def app_instance_scheduling():
     print("Create ec2 instances...")
 
     ec2 = boto3.resource('ec2')
-    instances = ec2.create_instances(ImageId=ami, MinCount=2, MaxCount=2, InstanceType='t2.micro', 
+    instances = ec2.create_instances(ImageId=ami, MinCount=20, MaxCount=20, InstanceType='t2.micro', 
     TagSpecifications=[
         {
             'ResourceType': 'instance',
@@ -71,8 +71,10 @@ def list_ec2_instances(ec2):
         print(instance.tags)
         print(instance.state)
 
+def terminate_ec2_instances(ec2):
+
 if __name__ == "__main__":
 
-    ec2 = boto3.resource('ec2')
-    list_ec2_instances(ec2)
-
+    #ec2 = boto3.resource('ec2')
+    #list_ec2_instances(ec2)
+	app_instance_scheduling()

@@ -30,7 +30,7 @@ def sqs_receive_message(sqs_url):
     response = sqs.receive_message(QueueUrl=sqs_url,
             MaxNumberOfMessages=1,
             MessageAttributeNames=['All'],
-            VisibilityTimeout=0)
+            VisibilityTimeout=15)
             #WaitTimeSeconds=0)    
     #print(response)
     messages = response.get('Messages')
