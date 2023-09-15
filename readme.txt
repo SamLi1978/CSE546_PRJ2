@@ -41,10 +41,14 @@ while true:
 	
 	if (msg_count_in_sqs > 0)
 	{
-		if (running_count_instances + pending_count_instances == 0)	
+		if (running_count_instances + pending_count_instances > 20 )	
+			do nothing
+
+		if (running_count_instances + pending_count_instances == 0 )	
 			start instances
-		if (running_count_instances + pending_count_instances > 10)	
-		
+
+		if (running_count_instances + pending_count_instances => 10 && running_count_instances + pending_count_instances <= 20)	
+		    start msg_count_in_sqs // 10
 			
 	}
 
