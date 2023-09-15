@@ -291,6 +291,9 @@ def handle_app_instances_scheduling():
     ec2 = boto3.resource('ec2')
     sqs_client = boto3.client('sqs')        
 
+    try_to_shut_down_all_app_instances = 0
+    try_to_shut_down_all_app_instances_limit = 4
+
     while True:
 
         time.sleep(5)
@@ -307,13 +310,26 @@ def handle_app_instances_scheduling():
         instances_total = instances_running_count + instances_pending_count
         print("instances : ", instances_running_count, instances_pending_count, instances_total)
 
+        print(f"try_to_shut_down_all_app_instances = {try_to_shut_down_all_app_instances}")
+
         if ((sqs_input_v==0) and (sqs_input_inv==0) and (sqs_output_v==0) and (sqs_output_inv==0)):
             if instances_running_count > 0:
-                print('terminate the running instances...')
-                instances_running.terminate()
+                if try_to_shut_down_all_app_instances > try_to_shut_down_all_app_instances_limit:
+                    try_to_shut_down_all_app_instances = 0
+                    print('terminate the running instances...')
+                    instances_running.terminate()
+                else:
+                    try_to_shut_down_all_app_instances = try_to_shut_down_all_app_instances + 1
+                    print(f"try to shut down all app instances for the {try_to_shut_down_all_app_instances} time...")
+            else:
+                try_to_shut_down_all_app_instances = 0                                
+            '''
             if instances_pending_count > 0:
                 print('terminate the pending instances...')
                 instances_pending.terminate()
+            '''
+        else:
+            try_to_shut_down_all_app_instances = 0
 
         if (sqs_input_v > 0):
             if instances_total >= instances_limit:
